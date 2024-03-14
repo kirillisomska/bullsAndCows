@@ -1,5 +1,9 @@
 package game;
 
+import game.io.writer.IReader;
+import game.io.writer.IWriter;
+import game.player.IPlayer;
+
 public interface IGameFactory {
-    public IGame createGame();
+    IGame createGame(int maxNumberLength, boolean isRepeatable, IWriter writer, IReader reader);
 }

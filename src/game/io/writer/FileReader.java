@@ -1,13 +1,29 @@
 package game.io.writer;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
 
-public class ConsoleReader implements IReader {
+public class FileReader implements IReader {
     private final IWriter writer;
+    private final String pathToFile;
+
+    public FileReader(IWriter writer, String pathToFile) {
+        this.writer = writer;
+        this.pathToFile = pathToFile;
+    }
+
+    @Override
     public int[] readNumber(int digits, boolean repeatable) {
-        Scanner scanner = new Scanner(System.in);
+        File file = new File(pathToFile);
+        Scanner scanner = null;
+        try {
+            scanner = new Scanner(file);
+        } catch (FileNotFoundException e) {
+            System.out.println("Can't connect to file");
+        }
         int[] number = new int[digits];
         boolean validInput = false;
 
@@ -44,9 +60,5 @@ public class ConsoleReader implements IReader {
         }
 
         return number;
-    }
-
-    public ConsoleReader(IWriter writer) {
-        this.writer = writer;
     }
 }
