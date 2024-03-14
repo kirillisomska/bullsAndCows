@@ -1,10 +1,7 @@
 package game;
 
 import game.io.writer.IWriter;
-import game.player.ComputerPlayer;
 import game.player.IPlayer;
-
-import java.util.Arrays;
 
 public class MultiplayerGame implements IGame {
     private final int maxNumberLength;
