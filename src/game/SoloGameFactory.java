@@ -1,18 +1,18 @@
 package game;
 
-import game.io.writer.IReader;
+import game.configuration.GameConfiguration;
+import game.io.reader.IReader;
 import game.io.writer.IWriter;
-import game.player.HumanPlayer;
-import game.player.IPlayer;
+import game.logic.SoloGameLogic;
+import game.player.ComputerPlayer;
 
 public class SoloGameFactory implements IGameFactory {
     public SoloGameFactory() {
     }
 
     @Override
-    public IGame createGame(int maxNumberLength, boolean isRepeatable, IWriter writer, IReader reader) {
-        IPlayer player = new HumanPlayer(reader);
-
-        return new SoloGame(maxNumberLength, isRepeatable, player, writer);
+    public IGame createGame(GameConfiguration gameConfiguration, IWriter writer, IReader reader) {
+        SoloGameLogic gameLogic = new SoloGameLogic(gameConfiguration, new ComputerPlayer());
+        return new SoloGame(writer, reader, gameLogic, gameConfiguration);
     }
 }

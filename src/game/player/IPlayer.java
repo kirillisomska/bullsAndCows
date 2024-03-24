@@ -1,7 +1,7 @@
 package game.player;
 
-public interface IPlayer {
-    int[] generateSeed(int maxNumberLength, boolean isRepeatable);
+import java.io.FileNotFoundException;
 
-    int[] guessNumber(int maxNumberLength, boolean isRepeatable);
+public interface IPlayer {
+    int generateSeed(int maxNumberLength, boolean isRepeatable) throws FileNotFoundException;
 }

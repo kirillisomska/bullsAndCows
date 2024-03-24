@@ -1,31 +1,52 @@
 package game;
 
+import dto.GameProgressResult;
+import exception.IncorrectNumberLengthException;
+import game.configuration.GameConfiguration;
+import game.configuration.GameRules;
+import game.io.reader.IReader;
 import game.io.writer.IWriter;
-import game.player.ComputerPlayer;
-import game.player.IPlayer;
+import game.logic.IGameLogic;
 
-import java.util.Arrays;
+import java.io.FileNotFoundException;
 
 public class SoloGame implements IGame {
-    private final int maxNumberLength;
-    private final boolean isRepeatable;
-
-    private final IPlayer player;
-
     private final IWriter writer;
+    private final IReader reader;
 
-    private boolean gameFinish = false;
+    private final IGameLogic gameLogic;
+
+    private final GameConfiguration gameConfiguration;
 
     private int stepsCount = 0;
 
-    private final int[] secretNumber;
-
     @Override
-    public void play() {
-        System.out.println(Arrays.toString(secretNumber));
+    public void play() throws FileNotFoundException {
+        int guess = reader.readNumber(gameConfiguration.getMaxNumberLength(), gameConfiguration.getGameRules() == GameRules.REPEATABLE);
+
+        GameProgressResult assumptionResult = null;
+        boolean gameFinish = false;
+
+        try {
+            assumptionResult = gameLogic.makeAssumption(guess);
+        } catch (IncorrectNumberLengthException e) {
+            throw new RuntimeException(e);
+        }
+
+        assert assumptionResult != null;
+        writer.writeMessage("Cows = " + assumptionResult.getCowsCount() + " Bulls = " + assumptionResult.getBullsCount());
+
         while (!gameFinish) {
-            int[] guess = player.guessNumber(maxNumberLength, isRepeatable);
-            calculateResult(guess);
+            guess = reader.readNumber(gameConfiguration.getMaxNumberLength(), gameConfiguration.getGameRules() == GameRules.REPEATABLE);
+            try {
+                assumptionResult = gameLogic.makeAssumption(guess);
+            } catch (IncorrectNumberLengthException e) {
+                throw new RuntimeException(e);
+            }
+            
+            gameFinish = assumptionResult.isNumberGuessed();
+
+            writer.writeMessage("Cows = " + assumptionResult.getCowsCount() + " Bulls = " + assumptionResult.getBullsCount());
 
             this.stepsCount += 1;
         }
@@ -33,37 +54,10 @@ public class SoloGame implements IGame {
         writer.writeMessage("Game finished. Steps count = " + stepsCount);
     }
 
-    private void calculateResult(int[] guess) {
-        int cows = 0;
-        int bulls = 0;
-
-        for (int i = 0; i < maxNumberLength; i++) {
-            int secretDigit = secretNumber[i];
-            int guessDigit = guess[i];
-
-            if (secretDigit == guessDigit) {
-                bulls++;
-            }
-            if (Arrays.binarySearch(secretNumber, guessDigit) >= 0) {
-                cows++;
-            }
-        }
-
-        if (bulls == maxNumberLength) {
-            this.gameFinish = true;
-        }
-
-        if (!gameFinish) {
-            writer.writeMessage("Cows " + cows + " , bulls " + bulls);
-        }
-    }
-
-    public SoloGame(int maxNumberLength, boolean isRepeatable, IPlayer player, IWriter writer) {
-        this.maxNumberLength = maxNumberLength;
-        this.isRepeatable = isRepeatable;
-        this.player = player;
+    public SoloGame(IWriter writer, IReader reader, IGameLogic gameLogic, GameConfiguration gameConfiguration) {
         this.writer = writer;
-        IPlayer computerPlayer = new ComputerPlayer();
-        this.secretNumber = computerPlayer.generateSeed(maxNumberLength, isRepeatable);
+        this.reader = reader;
+        this.gameLogic = gameLogic;
+        this.gameConfiguration = gameConfiguration;
     }
 }

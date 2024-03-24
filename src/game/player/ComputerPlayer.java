@@ -5,29 +5,15 @@ import java.util.Random;
 
 public class ComputerPlayer implements IPlayer {
     @Override
-    public int[] generateSeed(int maxNumberLength, boolean isRepeatable) {
-        int[] secretNumber = new int[maxNumberLength];
+    public int generateSeed(int maxNumberLength, boolean isRepeatable) {
         Random random = new Random();
-        HashSet<Integer> uniqueNumbers = new HashSet<>();
-        for (int i = 0; i < maxNumberLength; i++) {
-            if (isRepeatable) {
-                secretNumber[i] = random.nextInt(10);
-            } else {
-                while (true) {
-                    int number = random.nextInt(10);
-                    if (!uniqueNumbers.contains(number)) {
-                        uniqueNumbers.add(number);
-                        secretNumber[i] = number;
-                        break;
-                    }
-                }
+        StringBuilder seed = new StringBuilder();
+        while (seed.length() < maxNumberLength) {
+            int digit = random.nextInt(10);
+            if (isRepeatable || seed.indexOf(String.valueOf(digit)) == -1) {
+                seed.append(digit);
             }
         }
-        return secretNumber;
-    }
-
-    @Override
-    public int[] guessNumber(int maxNumberLength, boolean isRepeatable) {
-        return new int[0];
+        return Integer.parseInt(seed.toString());
     }
 }

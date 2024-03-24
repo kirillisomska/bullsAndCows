@@ -1,91 +1,67 @@
 package game;
 
+import dto.GameProgressResult;
+import exception.IncorrectNumberLengthException;
+import game.configuration.GameConfiguration;
+import game.configuration.GameRules;
+import game.io.reader.IReader;
 import game.io.writer.IWriter;
-import game.player.IPlayer;
+import game.logic.IGameLogic;
+
+import java.io.FileNotFoundException;
+import java.util.List;
 
 public class MultiplayerGame implements IGame {
-    private final int maxNumberLength;
-    private final boolean isRepeatable;
-
-    private final IPlayer firstPlayer;
-    private final IPlayer secondPlayer;
-
     private final IWriter writer;
+    private final IReader reader;
 
-    private boolean gameFinish = false;
+    private final IGameLogic gameLogic;
+
+    private final GameConfiguration gameConfiguration;
+
+    private final List<Integer> firstPlayerSecretNumber;
+    private final List<Integer> secondPlayerSecretNumber;
 
     private int stepsCount = 0;
 
-    private final int[] firstPlayerSecretNumber;
-    private final int[] secondPlayerSecretNumber;
-
     @Override
-    public void play() {
+    public void play() throws FileNotFoundException {
+        int guess = reader.readNumber(gameConfiguration.getMaxNumberLength(), gameConfiguration.getGameRules() == GameRules.REPEATABLE);
+
+        GameProgressResult assumptionResult = null;
+        boolean gameFinish = false;
+
+        try {
+            assumptionResult = gameLogic.makeAssumption(guess);
+        } catch (IncorrectNumberLengthException e) {
+            throw new RuntimeException(e);
+        }
+
+        assert assumptionResult != null;
+        writer.writeMessage("Cows = " + assumptionResult.getCowsCount() + " Bulls = " + assumptionResult.getBullsCount());
 
         while (!gameFinish) {
+            guess = reader.readNumber(gameConfiguration.getMaxNumberLength(), gameConfiguration.getGameRules() == GameRules.REPEATABLE);
+            try {
+                assumptionResult = gameLogic.makeAssumption(guess);
+            } catch (IncorrectNumberLengthException e) {
+                throw new RuntimeException(e);
+            }
+
+            gameFinish = assumptionResult.isNumberGuessed();
+
+            writer.writeMessage("Cows = " + assumptionResult.getCowsCount() + " Bulls = " + assumptionResult.getBullsCount());
+
             this.stepsCount += 1;
-            writer.writeMessage("First player guess number");
-            boolean firstPlayerFinish = calculateResult(firstPlayer.guessNumber(maxNumberLength, isRepeatable), secondPlayerSecretNumber);
-
-            writer.writeMessage("Second player guess number");
-            boolean secondPlayerFinish = calculateResult(secondPlayer.guessNumber(maxNumberLength, isRepeatable), firstPlayerSecretNumber);
-
-            if (secondPlayerFinish) {
-                writer.writeMessage("Second player win. Steps " + stepsCount);
-                gameFinish = true;
-                break;
-            }
-
-            if (firstPlayerFinish) {
-                writer.writeMessage("First player win. Steps " + stepsCount);
-                gameFinish = true;
-            }
         }
+
+        writer.writeMessage("Game finished. Steps count = " + stepsCount);
     }
 
-    private boolean calculateResult(final int[] guess, final int[] secretNumber) {
-        int cows = 0;
-        int bulls = 0;
-
-        for (int i = 0; i < secretNumber.length; i++) {
-            int secretDigit = secretNumber[i];
-            int guessDigit = guess[i];
-
-            if (secretDigit == guessDigit) {
-                bulls++;
-            }
-            if (contains(secretNumber, guessDigit)) {
-                cows++;
-            }
-        }
-
-        if (bulls == maxNumberLength) {
-            return true;
-        }
-
-        writer.writeMessage("Cows " + cows + " , bulls " + bulls);
-
-        return false;
-    }
-
-    private boolean contains(int[] array, int value) {
-        for (int j : array) {
-            if (j == value) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public MultiplayerGame(int maxNumberLength, boolean isRepeatable, IPlayer firstPlayer, IPlayer secondPlayer, IWriter writer) {
-        this.maxNumberLength = maxNumberLength;
-        this.isRepeatable = isRepeatable;
-        this.firstPlayer = firstPlayer;
-        this.secondPlayer = secondPlayer;
+    public MultiplayerGame(IWriter writer, IReader reader, IGameLogic gameLogic, GameConfiguration gameConfiguration) {
         this.writer = writer;
-        writer.writeMessage("First player enter number");
-        this.firstPlayerSecretNumber = firstPlayer.generateSeed(maxNumberLength, isRepeatable);
-        writer.writeMessage("Second player enter number");
-        this.secondPlayerSecretNumber = secondPlayer.generateSeed(maxNumberLength, isRepeatable);
+        this.reader = reader;
+        this.gameLogic = gameLogic;
+        this.gameConfiguration = gameConfiguration;
     }
 }
